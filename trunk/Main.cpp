@@ -166,7 +166,7 @@ class Person: public Component {
 			 * Next to these three methods, there are several overloaded versions of each,
 			 * based on whether you want to give a payload, etc. The different basic versions are:
 			 *
-			 * sendLocalMessage("MessageName", payloadPointer); // payload is not provided
+			 * sendLocalMessage("MessageName"); // payload is not provided
 			 * sendLocalMessage("MessageName", payloadPointer); // payload provided
 			 *
 			 * sendMessage("MessageName"); // payload is not provided
