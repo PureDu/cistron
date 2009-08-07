@@ -224,7 +224,7 @@ class Company: public Component {
 			// but don't request messages about components created afterwards
 			// this is not necessary because we called requestComponent, 
 			// so existing components of the Person type will be already reported
-			// requestAllComponents("Person", &Company::processPerson);
+			// requestAllExistingComponents("Person", &Company::processPerson);
 
 
 			// request a birthday message

@@ -116,10 +116,10 @@ class Component {
 		void requestComponent(string name, MessageFunction, bool local = false);
 
 		// request all components of one type
-		void requestAllComponents(string name, MessageFunction);
+		void requestAllExistingComponents(string name, MessageFunction);
 
-		// request a request id
-		RequestId getRequestId(ComponentRequestType type, string name);
+		// request a request id of a message
+		RequestId getMessageRequestId(string name);
 
 		/**
 		 * FANCY TEMPLATED REQUEST FUNCTIONS
@@ -139,7 +139,7 @@ class Component {
 
 		// request all components of one type
 		template<class T>
-		void requestAllComponents(string name, void (T::*f)(Message));
+		void requestAllExistingComponents(string name, void (T::*f)(Message));
 
 
 		/**
@@ -240,8 +240,8 @@ void Component::requestComponent(string name, void (T::*f)(Message), bool local)
 
 // request all components of one type
 template<class T>
-void Component::requestAllComponents(string name, void (T::*f)(Message)) {
-	requestAllComponents(name, boost::bind(f, dynamic_cast<T*>(this), _1));
+void Component::requestAllExistingComponents(string name, void (T::*f)(Message)) {
+	requestAllExistingComponents(name, boost::bind(f, dynamic_cast<T*>(this), _1));
 }
 
 

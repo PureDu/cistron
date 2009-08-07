@@ -133,7 +133,7 @@ void Component::requestComponent(string name, MessageFunction f, bool local) {
 }
 
 // request all components of one type
-void Component::requestAllComponents(string name, MessageFunction f) {
+void Component::requestAllExistingComponents(string name, MessageFunction f) {
 
 	// construct registered component
 	RegisteredComponent reg;
@@ -154,8 +154,8 @@ void Component::requestAllComponents(string name, MessageFunction f) {
 
 
 // get a request id
-RequestId Component::getRequestId(ComponentRequestType type, string name) {
-	return ObjectManager->getRequestId(type, name);
+RequestId Component::getMessageRequestId(string name) {
+	return ObjectManager->getRequestId(REQ_MESSAGE, name);
 }
 
 

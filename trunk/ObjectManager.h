@@ -79,8 +79,13 @@ class ObjectMgr: public CSingleton<ObjectMgr> {
 		 */
 
 		// send global messages
-		void sendGlobalMessage(string msg, Component *component, void *payload);
-		void sendGlobalMessage(RequestId reqId, Component *component, void *payload);
+		inline void sendGlobalMessage(string msg, Component *component, void *payload) {
+			sendGlobalMessage(getExistingRequestId(REQ_MESSAGE, msg), Message(MESSAGE, component, payload));
+		}
+		inline void sendGlobalMessage(RequestId reqId, Component *component, void *payload) {
+			sendGlobalMessage(reqId, Message(MESSAGE, component, payload));
+		}
+		void sendGlobalMessage(RequestId reqId, Message msg);
 
 		// send local messages to another object
 		inline void sendMessageToObject(string msg, Component *component, ObjectId id, void *payload) {
