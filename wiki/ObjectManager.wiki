@@ -1,0 +1,29 @@
+#summary One-sentence summary of this page.
+
+= ObjectManager =
+
+ObjectManager is a singleton class which should be initialized only once during startup of the application, and should be destroyed only once at shutdown time. This is done through the global `ObjectManagerInit()` and `ObjectManagerDestroy()` functions.
+
+The ObjectManager is used to create, finalize and destroy objects and add components to objects. All the other functionality of Cistron is made available to the components through an interface in Component.
+
+
+== Functions ==
+
+=== `ObjectId createObject()` ===
+
+Creates a new object, and returns a unique identifier for this object. From now on, components can be added to the object.
+
+
+=== `void destroyObject(ObjectId)` ===
+
+Destroy the object and all the components that belong to the object. Calls the `destroy()` of every component in order.
+
+
+=== `void addComponent(ObjectId objId, Component*)` ===
+
+Add a component to an object. Calls the `addedToObject()` function of the component.
+
+
+=== `void finalizeObject(ObjectId)` ===
+
+Finalizes the object. At this moment, all the requirements placed by components calling `requireComponent` are checked, and if some requirements are not met, the entire object is destroyed.
