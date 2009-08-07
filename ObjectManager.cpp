@@ -41,6 +41,9 @@ ObjectMgr::~ObjectMgr() {
 // generate a unique request id or return one if it already exists
 RequestId ObjectMgr::getRequestId(ComponentRequestType type, string name) {
 
+	// ALL_COMPONENTS is changed to COMPONENT, it's the same in regards to the request id
+	if (type == REQ_ALLCOMPONENTS) type = REQ_COMPONENT;
+
 	// if it doesn't exist, create it
 	if (fRequestToId[type].find(name) == fRequestToId[type].end()) {
 		fRequestToId[type][name] = ++fRequestIdCounter;
@@ -250,14 +253,14 @@ void ObjectMgr::registerGlobalRequest(ComponentRequest req, RegisteredComponent 
 	// first we request the id and create it if it doesn't exist
 	RequestId reqId = getRequestId(req.type, req.name);
 
-	// if this request is locked, postpone the processing
-	if (fRequestLocks[reqId].locked) {
-		fRequestLocks[reqId].pendingGlobalRequests.push_back(pair<ComponentRequest, RegisteredComponent>(req, reg));
-		return;
-	}
-
 	// we only really register component and message requests
 	if (req.type != REQ_ALLCOMPONENTS) {
+
+		// if this request is locked, postpone the processing
+		if (fRequestLocks[reqId].locked) {
+			fRequestLocks[reqId].pendingGlobalRequests.push_back(pair<ComponentRequest, RegisteredComponent>(req, reg));
+			return;
+		}
 
 		// if the request list isn't large enough, we resize it
 		if (fGlobalRequests.size() <= reqId) {
