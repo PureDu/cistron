@@ -1,3 +1,5 @@
+#sidebar TableOfContents
+
 = What is Cistron? =
 
 Cistron is a component-based programming framework targeted at game development. The philosophy behind this programming paradigm is well explained on the following website:
