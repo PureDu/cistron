@@ -315,34 +315,18 @@ void ObjectMgr::registerGlobalRequest(ComponentRequest req, RegisteredComponent 
 }
 
 
-
-
 // send a message to everyone
-void ObjectMgr::sendGlobalMessage(string msg, Component *component, void *payload) {
-
-	// see if the request exists
-	RequestId reqId = getExistingRequestId(REQ_MESSAGE, msg);
-
-	// forward to better function
-	sendGlobalMessage(reqId, component, payload);
-}
-
-
-// send a message to everyone
-void ObjectMgr::sendGlobalMessage(RequestId reqId, Component *component, void *payload) {
+void ObjectMgr::sendGlobalMessage(RequestId reqId, Message msg) {
 
 	// must be valid component
-	assert(component->isValid());
-
-	// fix message
-	Message msg(MESSAGE, component, payload);
+	assert(msg.sender->isValid());
 
 	// activate the lock
 	activateLock(reqId);
 
 	// look for requests and forward them
 	for (list<RegisteredComponent>::iterator it = fGlobalRequests[reqId].begin(); it != fGlobalRequests[reqId].end(); ++it) {
-		if ((*it).trackMe) cout << it->component << " received message " << fIdToRequest[REQ_MESSAGE][reqId] << " from " << *component << endl; 
+		if ((*it).trackMe) cout << it->component << " received message " << fIdToRequest[REQ_MESSAGE][reqId] << " from " << *msg.sender << endl; 
 		(*it).callback(msg);
 	}
 
