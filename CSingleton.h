@@ -1,6 +1,6 @@
 
-#ifndef INC_SINGLETON
-#define INC_SINGLETON
+#ifndef INC_CSINGLETON
+#define INC_CSINGLETON
 
 
 #include <cassert>
