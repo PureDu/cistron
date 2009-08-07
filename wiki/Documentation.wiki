@@ -1,4 +1,9 @@
 #summary The documentation for Cistron.
+#sidebar TableOfContents
+
+Welcome to the Cistron documentation. This is a work in progress. If you have any suggestions on how to improve this documentation, please do not hesitate to contact us.
+
+
 
 = Description =
 
