@@ -1,0 +1,48 @@
+= Component =
+
+Component is the class that every component has to derive from, to be included into the Cistron framework. Component serves as a gateway for communication with other objects. A component should only call functions of the Component class to request and send messages.
+
+the ObjectManager class is _only_ used for adding new components to the framework. All other communication goes through Component and is processed internally. Below a summary and short explanation for all the functions of Component are described.
+
+== Basic functionality == 
+
+=== `Component(string name)` ===
+
+The constructor of Component must be called by the derived class with a unique name identifying this component. This should typically be the name of the class that is being created. To avoid problems, two different classes should never use the same component name.
+
+Do not call any functions from Component from your own constructor. These can only first be called when the component is added to an object (see below).
+
+=== `virtual void addedToObject()` ===
+
+This function is called when the component is added to an object, and thus is added to the framework. This is the first point at which a component can request or send messages, and can add other components.
+
+
+== Requests ==
+
+=== `void requestMessage(string msg, MessageFunction)` ===
+
+Start listening to the message with name msg. From now on, all messages of this type that are sent, either globally, or to the object this component belongs to, are forwarded to the function that is provided. MessageFunction should be a member function (private or public) of the component.
+
+
+=== `void requestComponent(string componentName, MessageFunction, bool local = false)` ===
+
+Start listening for creation or destruction messages for the component type componentName. Whenever a component of this type is added to the framework or is destroyed, the message function is called with a CREATE/DESTROY message.
+
+The third optional `local` argument determines whether the function is called for every component of that type in the entire framework, or only for components of that type that belong to the same object.
+
+If, at the moment of request, there are already components of this type in the framework, the message function is called one time for each component that already exists.
+
+
+=== `void requestAllComponents(string name, MessageFunction)` ===
+
+This function does not register the request 
+Start listening to the message with name msg. From now on, all messages of this type that are sent, either globally, or to the object this component belongs to, are forwarded to the function that is provided. MessageFunction should be a member function (private or public) of the component.
+
+		// require a component in this object
+		void requireComponent(string name, MessageFunction);
+
+		// register a component request
+		
+
+		// request all components of one type
+		void requestAllComponents(string name, MessageFunction);
