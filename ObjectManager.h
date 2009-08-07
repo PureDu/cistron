@@ -3,7 +3,7 @@
 #define INC_OBJECTMANAGER
 
 
-#include "Singleton.h"
+#include "CSingleton.h"
 #include "Object.h"
 
 
@@ -22,7 +22,7 @@ namespace Cistron {
 
 
 // the object manager manages all object entities, and performs communication between them
-class ObjectMgr: public Singleton<ObjectMgr> {
+class ObjectMgr: public CSingleton<ObjectMgr> {
 
 	public:
 
