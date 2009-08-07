@@ -1,5 +1,4 @@
 #summary The documentation for Cistron.
-#sidebar TableOfContents
 
 Welcome to the Cistron documentation. Use the navigation bar on the left side to navigate through the documentation.
 
