@@ -13,7 +13,7 @@
  * The government is represented by yet another object.
  */
 
-#include "ObjectManager.h"
+#include "Cistron.h"
 
 using namespace Cistron;
 
