@@ -10,20 +10,20 @@ namespace Cistron {
 
 
 template<typename T>
-class Singleton {
+class CSingleton {
 
 	public:
 
 		// constructor
-		Singleton() {
+		CSingleton() {
 			assert(!fSingleton);
-			int offset = (int)(T*)1 - (int)(Singleton<T>*)(T*)1;
+			int offset = (int)(T*)1 - (int)(CSingleton<T>*)(T*)1;
 			fSingleton = (T*)((int)this + offset);
 		};
 
 
 		// destructor
-		virtual ~Singleton() {
+		virtual ~CSingleton() {
 			assert(fSingleton);
 			fSingleton = 0;
 		}
@@ -47,7 +47,7 @@ class Singleton {
 };
 
 
-template <typename T> T* Singleton<T>::fSingleton = 0;
+template <typename T> T* CSingleton<T>::fSingleton = 0;
 
 
 };
