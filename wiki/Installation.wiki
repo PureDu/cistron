@@ -4,4 +4,4 @@ First, you should download the latest version of Cistron from the Downloads sect
 
 Cistron is platform-independent and depends only on the STL for its implementation. This means that every project can use Cistron by just compiling the three source files (`ObjectManager.cpp`, `Object.cpp` and `Component.cpp`) and linking your project to them.
 
-In Visual Studio, it is the easiest to copy the code to your project directory and add them to your own project in Visual Studio.
+In Visual Studio, it is the easiest to copy all the files (except for `Main.cpp`!)to your project directory and add them to your own project in Visual Studio.
