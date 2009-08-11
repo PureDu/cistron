@@ -251,25 +251,25 @@ class Component {
 // message request function
 template<class T>
 void Component::requestMessage(string message, void (T::*f)(Message const &)) {
-	requestMessage(message, boost::bind(f, dynamic_cast<T*>(this), _1));
+	requestMessage(message, boost::bind(f, (T*)(this), _1));
 }
 
 // require a component in this object
 template<class T>
 void Component::requireComponent(string name, void (T::*f)(Message const &)) {
-	requireComponent(name, boost::bind(f, dynamic_cast<T*>(this), _1));
+	requireComponent(name, boost::bind(f, (T*)(this), _1));
 }
 
 // register a component request
 template<class T>
 void Component::requestComponent(string name, void (T::*f)(Message const &), bool local) {
-	requestComponent(name, boost::bind(f, dynamic_cast<T*>(this), _1), local);
+	requestComponent(name, boost::bind(f, (T*)(this), _1), local);
 }
 
 // request all components of one type
 template<class T>
 void Component::requestAllExistingComponents(string name, void (T::*f)(Message const &)) {
-	requestAllExistingComponents(name, boost::bind(f, dynamic_cast<T*>(this), _1));
+	requestAllExistingComponents(name, boost::bind(f, (T*)(this), _1));
 }
 
 
