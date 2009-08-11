@@ -67,12 +67,12 @@ class Job: public Component {
 
 		// we are fired from this job
 		
-		void fire(Message msg) {
+		void fire(Message const & msg) {
 			/**
 			 * Message is a struct containing the following fields:
 			 *    - type: One of CREATE,DESTROY,MESSAGE
 			 *            Must be MESSAGE in this case, because the message originated from a requestMessage call
-			 *    - sender: A void pointer to the Component who sent the message.
+			 *    - sender: A pointer to the Component who sent the message.
 			 *    - p: A void pointer pointing to an optional payload for the message. This can be "added" to the
 			 *         message by the sender of the message.
 			 */
@@ -127,13 +127,13 @@ class Person: public Component {
 
 
 		// we received a job - make a happy dance
-		void processJob(Message msg) {
+		void processJob(Message const & msg) {
 			/**
 			 * Message is a struct containing the following fields:
 			 *    - type: One of CREATE,DESTROY,MESSAGE
 			 *            Must be CREATE or DESTROY in this case, because the message originated from
 			 *            a requestComponent call.
-			 *    - sender: A void pointer to the Component who was just created, or is about to be destroyed (deleted).
+			 *    - sender: A pointer to the Component who was just created, or is about to be destroyed (deleted).
 			 *    - p: not used for CREATE or DESTROY messages.
 			 */
 
@@ -149,7 +149,7 @@ class Person: public Component {
 		}
 
 		// we receive a next year message - update the age, and let everyone know that our age changed
-		void nextYear(Message msg) {
+		void nextYear(Message const & msg) {
 
 			// first, we update our age
 			++fAge;
@@ -237,7 +237,7 @@ class Company: public Component {
 
 
 		// process component of type 2
-		void processPerson(Message msg) {
+		void processPerson(Message const & msg) {
 
 			// get the person
 			Person *person = (Person*)msg.sender;
@@ -255,14 +255,14 @@ class Company: public Component {
 				job->setSalary(salary);
 
 				// add the job to the same object that the person belongs to
-				ObjectManager->addComponent(person->getOwnerId(), job);
+				addComponent(person->getOwnerId(), job);
 
 
 				// really old people receive a second job - bonus work for more salary
 				if (person->getAge() >= 50) {
 					Job *extraJob = new Job();
 					extraJob->setSalary(50000);
-					ObjectManager->addComponent(person->getOwnerId(), extraJob);
+					addComponent(person->getOwnerId(), extraJob);
 				}
 			}
 
@@ -271,7 +271,7 @@ class Company: public Component {
 
 
 		// process birthday
-		void processBirthday(Message msg) {
+		void processBirthday(Message const & msg) {
 
 			// get the person whose birthday it is
 			Person *person = (Person*)msg.sender;
@@ -288,7 +288,7 @@ class Company: public Component {
 			if (person->getAge() == 50) {
 				Job *extraJob = new Job();
 				extraJob->setSalary(50000);
-				ObjectManager->addComponent(person->getOwnerId(), extraJob);
+				addComponent(person->getOwnerId(), extraJob);
 			}
 		}
 
@@ -338,7 +338,7 @@ class Government: public Component {
 
 
 		// process new and lost jobs
-		void processJob(Message msg) {
+		void processJob(Message const & msg) {
 
 			// get the job
 			Job *job = (Job*)msg.sender;
@@ -366,54 +366,48 @@ class Government: public Component {
  */
 int main(char **args) {
 
-	// first, initialize the object manager
-	ObjectManagerInit();
-
-
+	// create the object manager
+	ObjectManager* objectManager = new ObjectManager();
 
 	// first, create a new object
-	ObjectId p1Id = ObjectManager->createObject();
+	ObjectId p1Id = objectManager->createObject();
 
 	// this object is now empty and contains no components
 	// we create a person component and add it to the newly created object
 	Person *p1 = new Person("Walter", 43);
-	ObjectManager->addComponent(p1Id, p1);
+	objectManager->addComponent(p1Id, p1);
 
 	// we now create a company in its own separate object
-	ObjectId companyId = ObjectManager->createObject();
+	ObjectId companyId = objectManager->createObject();
 	Company *company = new Company();
-	ObjectManager->addComponent(companyId, company);
+	objectManager->addComponent(companyId, company);
 	
 	// the company will now assign a job to person 1
 
 	// add two more persons, one who will soon retire, and one who will get his bonus job soon
 
 	// old person
-	ObjectId p2Id = ObjectManager->createObject();
+	ObjectId p2Id = objectManager->createObject();
 	Person *p2 = new Person("Bob", 62);
-	ObjectManager->addComponent(p2Id, p2);
+	objectManager->addComponent(p2Id, p2);
 
 	// soon to turn 50
-	ObjectId p3Id = ObjectManager->createObject();
+	ObjectId p3Id = objectManager->createObject();
 	Person *p3 = new Person("Peter", 48);
-	ObjectManager->addComponent(p3Id, p3);
+	objectManager->addComponent(p3Id, p3);
 
 	// now the company has assigned 4 jobs, 1 to Walter, 1 to Peter and 2 to Bob
 
 	// now, we add the government, which will keep track of the total earned income in our mini universe
-	ObjectId governmentId = ObjectManager->createObject();
+	ObjectId governmentId = objectManager->createObject();
 	Government *government = new Government();
-	ObjectManager->addComponent(governmentId, government);
+	objectManager->addComponent(governmentId, government);
 
 	// finally, we advance the calendar by a couple of years, and see what happens
 	government->advanceCalendar();
 	government->advanceCalendar();
 	government->advanceCalendar();
 	government->advanceCalendar();
-
-
-	// we're all done - clean up the object manager
-	ObjectManagerDestroy();
 
 	return 0;
 }

@@ -12,34 +12,34 @@ using std::endl;
 using boost::format;
 
 
-// initialization
-void Cistron::ObjectManagerInit() {
-	ObjectMgr::init();
-};
-void Cistron::ObjectManagerDestroy() {
-	ObjectMgr::destroy();
-};
-ObjectMgr *ObjectMgr::fObjectMgrInstance;
-
-
-
 // constructor/destructor
-ObjectMgr::ObjectMgr() : fIdCounter(0), fRequestIdCounter(0), fNLocks(0) {
+ObjectManager::ObjectManager() : fIdCounter(0), fRequestIdCounter(0), fNLocks(0) {
 
 	// because we start counting from 1 for request id's, we add an empty request lock in front
 	fRequestLocks.push_back(RequestLock());
 }
-ObjectMgr::~ObjectMgr() {
+ObjectManager::~ObjectManager() {
 
 	// delete all objects
 	for (unsigned i = 0; i < fObjects.size(); ++i) {
-		if (fObjects[i] != 0) delete fObjects[i];
+
+		// already destroyed earlier
+		if (fObjects[i] == 0) continue;
+
+		// destroy every component in the object
+		list<Component*> comps = fObjects[i]->getComponents();
+		for (list<Component*>::iterator it = comps.begin(); it != comps.end(); ++it) {
+			destroyComponent(*it);
+		}
+
+		// destroy the object itself
+		delete fObjects[i];
 	}
 }
 
 
 // generate a unique request id or return one if it already exists
-RequestId ObjectMgr::getRequestId(ComponentRequestType type, string name) {
+RequestId ObjectManager::getMessageRequestId(ComponentRequestType type, string name) {
 
 	// ALL_COMPONENTS is changed to COMPONENT, it's the same in regards to the request id
 	if (type == REQ_ALLCOMPONENTS) type = REQ_COMPONENT;
@@ -58,7 +58,7 @@ RequestId ObjectMgr::getRequestId(ComponentRequestType type, string name) {
 
 
 // return existing request id
-RequestId ObjectMgr::getExistingRequestId(ComponentRequestType type, string name) {
+RequestId ObjectManager::getExistingRequestId(ComponentRequestType type, string name) {
 
 	// if it doesn't exist we don't return it
 	if (fRequestToId[type].find(name) == fRequestToId[type].end()) {
@@ -76,7 +76,7 @@ RequestId ObjectMgr::getExistingRequestId(ComponentRequestType type, string name
 
 
 // create a new object
-ObjectId ObjectMgr::createObject() {
+ObjectId ObjectManager::createObject() {
 
 	// create a new object
 	Object *obj = new Object(fIdCounter);
@@ -90,7 +90,7 @@ ObjectId ObjectMgr::createObject() {
 
 
 // activate lock
-void ObjectMgr::activateLock(RequestId reqId) {
+void ObjectManager::activateLock(RequestId reqId) {
 
 	// if the lock is already activated, we have bounced against an infinite loop
 	if (fRequestLocks[reqId].locked) {
@@ -106,7 +106,7 @@ void ObjectMgr::activateLock(RequestId reqId) {
 
 
 // release the lock, process the pending global and local requests
-void ObjectMgr::releaseLock(RequestId reqId) {
+void ObjectManager::releaseLock(RequestId reqId) {
 
 	// lock
 	RequestLock& lock = fRequestLocks[reqId];
@@ -148,15 +148,23 @@ void ObjectMgr::releaseLock(RequestId reqId) {
 
 
 // add a new component to an object
-void ObjectMgr::addComponent(ObjectId id, Component *component) {
+void ObjectManager::addComponent(ObjectId id, Component *component) {
 
 	// make sure the object exists
 	if (id < 0 || id >= fObjects.size() || fObjects[id] == 0) {
 		error(format("Failed to add component %s to object %d: it does not exist!") % component->toString() % id);
 	}
 
+	// can only add once
+	if (component->fObjectManager != 0) {
+		error(format("Component is already part of an ObjectManager. You cannot add a component twice."));
+	}
+
 	// we get the appropriate object
 	Object *obj = fObjects[id];
+
+	// set the object manager
+	component->fObjectManager = this;
 
 	// set the owner of the component
 	component->setOwner(id);
@@ -203,10 +211,10 @@ void ObjectMgr::addComponent(ObjectId id, Component *component) {
 
 // register a local request
 // only COMPONENT requests can be local!!
-void ObjectMgr::registerLocalRequest(ComponentRequest req, RegisteredComponent reg) {
+void ObjectManager::registerLocalRequest(ComponentRequest req, RegisteredComponent reg) {
 
 	// we generate the request id (might be new)
-	RequestId reqId = getRequestId(req.type, req.name);
+	RequestId reqId = getMessageRequestId(req.type, req.name);
 
 	// if this request is locked, postpone the processing
 	if (fRequestLocks[reqId].locked) {
@@ -247,11 +255,11 @@ void ObjectMgr::registerLocalRequest(ComponentRequest req, RegisteredComponent r
 
 
 // register a global request
-void ObjectMgr::registerGlobalRequest(ComponentRequest req, RegisteredComponent reg) {
+void ObjectManager::registerGlobalRequest(ComponentRequest req, RegisteredComponent reg) {
 	assert(reg.component->isValid());
 
 	// first we request the id and create it if it doesn't exist
-	RequestId reqId = getRequestId(req.type, req.name);
+	RequestId reqId = getMessageRequestId(req.type, req.name);
 
 	// we only really register component and message requests
 	if (req.type != REQ_ALLCOMPONENTS) {
@@ -316,7 +324,7 @@ void ObjectMgr::registerGlobalRequest(ComponentRequest req, RegisteredComponent 
 
 
 // send a message to everyone
-void ObjectMgr::sendGlobalMessage(RequestId reqId, Message msg) {
+void ObjectManager::sendGlobalMessage(RequestId reqId, Message const & msg) {
 
 	// must be valid component
 	assert(msg.sender->isValid());
@@ -336,14 +344,14 @@ void ObjectMgr::sendGlobalMessage(RequestId reqId, Message msg) {
 
 
 // error processing
-void ObjectMgr::error(boost::format err) {
+void ObjectManager::error(boost::format err) {
 	cout << err.str() << endl;
 	assert(false);
 }
 
 
 // destroy object
-void ObjectMgr::destroyObject(ObjectId id) {
+void ObjectManager::destroyObject(ObjectId id) {
 
 	// object doesn't exist
 	if (id < 0 || id >= fObjects.size() || fObjects[id] == 0) {
@@ -366,7 +374,7 @@ void ObjectMgr::destroyObject(ObjectId id) {
 
 
 // destroy a component
-void ObjectMgr::destroyComponent(Component *comp) {
+void ObjectManager::destroyComponent(Component *comp) {
 
 	// already destroyed before, don't do anything
 	if (comp->isDestroyed()) {
@@ -442,7 +450,7 @@ void ObjectMgr::destroyComponent(Component *comp) {
 
 
 // finalize an object
-void ObjectMgr::finalizeObject(ObjectId id) {
+void ObjectManager::finalizeObject(ObjectId id) {
 
 	// object doesn't exist
 	if (id < 0 || id >= fObjects.size() || fObjects[id] == 0) {
@@ -474,7 +482,7 @@ else cout << "Finalize on object " << id << " failed, destroying..." << endl;*/
 
 
 // register a unique name for an object
-bool ObjectMgr::registerName(ObjectId id, string name) {
+bool ObjectManager::registerName(ObjectId id, string name) {
 
 	// see if the name doesn't exist yet
 	if (fObjectNameToId.find(name) != fObjectNameToId.end()) {
@@ -488,7 +496,7 @@ bool ObjectMgr::registerName(ObjectId id, string name) {
 }
 
 // get the id based on the unique name identified
-ObjectId ObjectMgr::getObjectId(string name) {
+ObjectId ObjectManager::getObjectId(string name) {
 
 	// see if the name doesn't exist yet
 	if (fObjectNameToId.find(name) == fObjectNameToId.end()) {
@@ -502,7 +510,7 @@ ObjectId ObjectMgr::getObjectId(string name) {
 
 
 // logging
-void ObjectMgr::trackRequest(RequestId reqId, bool local, Component *component) {
+void ObjectManager::trackRequest(RequestId reqId, bool local, Component *component) {
 
 	// if global, find it
 	if (!local) {

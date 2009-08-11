@@ -3,7 +3,6 @@
 #define INC_OBJECTMANAGER
 
 
-#include "CSingleton.h"
 #include "Object.h"
 
 
@@ -12,32 +11,23 @@
 #include <string>
 #include <boost/format.hpp>
 
+
+namespace Cistron {
+
 using std::list;
 using std::string;
 using std::pair;
 using stdext::hash_map;
 
 
-namespace Cistron {
-
-
 // the object manager manages all object entities, and performs communication between them
-class ObjectMgr: public CSingleton<ObjectMgr> {
+class ObjectManager {
 
 	public:
 
 		// constructor/destructor
-		ObjectMgr();
-		virtual ~ObjectMgr();
-
-		// init/destroy of the singleton
-		inline static void init() {
-			fObjectMgrInstance = new ObjectMgr();
-		};
-		inline static void destroy() {
-			delete fObjectMgrInstance;
-		};
-
+		ObjectManager();
+		virtual ~ObjectManager();
 
 		// create a new object
 		ObjectId createObject();
@@ -79,33 +69,33 @@ class ObjectMgr: public CSingleton<ObjectMgr> {
 		 */
 
 		// send global messages
-		inline void sendGlobalMessage(string msg, Component *component, void *payload) {
+		inline void sendGlobalMessage(string msg, Component *component, boost::any payload) {
 			sendGlobalMessage(getExistingRequestId(REQ_MESSAGE, msg), Message(MESSAGE, component, payload));
 		}
-		inline void sendGlobalMessage(RequestId reqId, Component *component, void *payload) {
+		inline void sendGlobalMessage(RequestId reqId, Component *component, boost::any payload) {
 			sendGlobalMessage(reqId, Message(MESSAGE, component, payload));
 		}
-		void sendGlobalMessage(RequestId reqId, Message msg);
+		void sendGlobalMessage(RequestId reqId, Message const & msg);
 
 		// send local messages to another object
-		inline void sendMessageToObject(string msg, Component *component, ObjectId id, void *payload) {
-			fObjects[id]->sendMessage(getRequestId(REQ_MESSAGE, msg), Message(MESSAGE, component, payload));
+		inline void sendMessageToObject(string msg, Component *component, ObjectId id, boost::any payload) {
+			fObjects[id]->sendMessage(getMessageRequestId(REQ_MESSAGE, msg), Message(MESSAGE, component, payload));
 		}
 		inline void sendMessageToObject(RequestId reqId, Component *component, ObjectId id) {
 			fObjects[id]->sendMessage(reqId, Message(MESSAGE, component));
 		}
-		inline void sendMessageToObject(RequestId reqId, Component *component, ObjectId id, void *payload) {
+		inline void sendMessageToObject(RequestId reqId, Component *component, ObjectId id, boost::any payload) {
 			fObjects[id]->sendMessage(reqId, Message(MESSAGE, component, payload));
 		}
-		inline void sendMessageToObject(string name, Message msg, ObjectId id) {
-			fObjects[id]->sendMessage(getRequestId(REQ_MESSAGE, name), msg);
+		inline void sendMessageToObject(string name, Message const & msg, ObjectId id) {
+			fObjects[id]->sendMessage(getMessageRequestId(REQ_MESSAGE, name), msg);
 		}
-		inline void sendMessageToObject(RequestId reqId, Message msg, ObjectId id) {
+		inline void sendMessageToObject(RequestId reqId, Message const & msg, ObjectId id) {
 			fObjects[id]->sendMessage(reqId, msg);
 		}
 
 		// ask for a request id
-		RequestId getRequestId(ComponentRequestType, string name);
+		RequestId getMessageRequestId(ComponentRequestType, string name);
 
 		/**
 		 * LOGGING
@@ -121,9 +111,6 @@ class ObjectMgr: public CSingleton<ObjectMgr> {
 
 
 	private:
-
-		// the singleton instance
-		static ObjectMgr *fObjectMgrInstance;
 
 		/**
 		 * REQUEST IDS
@@ -207,15 +194,6 @@ class ObjectMgr: public CSingleton<ObjectMgr> {
 
 
 };
-
-
-// some defines
-#define ObjectManager ObjectMgr::getSingletonPtr()
-
-// initialization
-extern void ObjectManagerInit();
-extern void ObjectManagerDestroy();
-
 
 };
 

@@ -10,13 +10,13 @@
 #include <string>
 #include <vector>
 
+
+namespace Cistron {
+
 using std::vector;
 using std::list;
 using std::string;
 using stdext::hash_map;
-
-
-namespace Cistron {
 
 
 // an object is a container of components
@@ -59,7 +59,7 @@ class Object {
 		 */
 
 		// send a local message
-		void sendMessage(RequestId, Message);
+		void sendMessage(RequestId, Message const &);
 
 		// register a request
 		void registerRequest(RequestId, RegisteredComponent);
@@ -91,7 +91,7 @@ class Object {
 
 
 		// object manager is our friend
-		friend class ObjectMgr;
+		friend class ObjectManager;
 
 
 
