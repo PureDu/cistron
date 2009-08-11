@@ -14,7 +14,7 @@ using namespace std;
 
 
 // constructor/destructor
-Component::Component(string name) : fOwnerId(-1), fName(name), fDestroyed(false), fTrack(false) {
+Component::Component(string name) : fOwnerId(-1), fName(name), fDestroyed(false), fTrack(false), fObjectManager(0) {
 	static ComponentId IdCounter = 0;
 	fId = ++IdCounter;
 }
@@ -64,10 +64,38 @@ string Component::getName() {
 }
 
 
+/**
+ * OBJECT/COMPONENT MODIFICATION FUNCTIONS
+ */
+
+
 // add another component to this object
 void Component::addLocalComponent(Component *c) {
-	ObjectManager->addComponent(getOwnerId(), c);
+	fObjectManager->addComponent(getOwnerId(), c);
 }
+
+
+// add another component to another object
+void Component::addComponent(ObjectId objId, Component *c) {
+	fObjectManager->addComponent(objId, c);
+}
+
+
+// create an object
+ObjectId Component::createObject() {
+	return fObjectManager->createObject();
+}
+
+// finalize an object
+void Component::finalizeObject(ObjectId objId) {
+	fObjectManager->finalizeObject(objId);
+}
+
+// destroy object
+void Component::destroyObject(ObjectId objId) {
+	fObjectManager->destroyObject(objId);
+}
+
 
 
 /**
@@ -90,7 +118,7 @@ void Component::requestMessage(string message, MessageFunction f) {
 	req.name = message;
 
 	// forward to object manager
-	ObjectManager->registerGlobalRequest(req, reg);
+	fObjectManager->registerGlobalRequest(req, reg);
 }
 
 // require a component in this object
@@ -109,7 +137,7 @@ void Component::requireComponent(string name, MessageFunction f) {
 	req.name = name;
 
 	// forward to object manager
-	ObjectManager->registerLocalRequest(req, reg);
+	fObjectManager->registerLocalRequest(req, reg);
 }
 
 // register a component request
@@ -128,8 +156,8 @@ void Component::requestComponent(string name, MessageFunction f, bool local) {
 	req.name = name;
 
 	// forward to object manager
-	if (local) ObjectManager->registerLocalRequest(req, reg);
-	else ObjectManager->registerGlobalRequest(req, reg);
+	if (local) fObjectManager->registerLocalRequest(req, reg);
+	else fObjectManager->registerGlobalRequest(req, reg);
 }
 
 // request all components of one type
@@ -148,14 +176,14 @@ void Component::requestAllExistingComponents(string name, MessageFunction f) {
 	req.name = name;
 
 	// forward to object manager
-	ObjectManager->registerGlobalRequest(req, reg);
+	fObjectManager->registerGlobalRequest(req, reg);
 }
 
 
 
 // get a request id
 RequestId Component::getMessageRequestId(string name) {
-	return ObjectManager->getRequestId(REQ_MESSAGE, name);
+	return fObjectManager->getMessageRequestId(REQ_MESSAGE, name);
 }
 
 
@@ -165,29 +193,29 @@ RequestId Component::getMessageRequestId(string name) {
  */
 
 // send a message
-void Component::sendMessage(string msg, void *payload) {
-	ObjectManager->sendGlobalMessage(msg, this, payload);
+void Component::sendMessage(string msg, boost::any payload) {
+	fObjectManager->sendGlobalMessage(msg, this, payload);
 }
-void Component::sendMessage(RequestId reqId, void *payload) {
-	ObjectManager->sendGlobalMessage(reqId, this, payload);
+void Component::sendMessage(RequestId reqId, boost::any payload) {
+	fObjectManager->sendGlobalMessage(reqId, this, payload);
 }
-void Component::sendLocalMessage(string msg, void *payload) {
-	ObjectManager->sendMessageToObject(msg, this, fOwnerId, payload);
+void Component::sendLocalMessage(string msg, boost::any payload) {
+	fObjectManager->sendMessageToObject(msg, this, fOwnerId, payload);
 }
-void Component::sendLocalMessage(RequestId reqId, void *payload) {
-	ObjectManager->sendMessageToObject(reqId, this, fOwnerId, payload);
+void Component::sendLocalMessage(RequestId reqId, boost::any payload) {
+	fObjectManager->sendMessageToObject(reqId, this, fOwnerId, payload);
 }
-void Component::sendLocalMessage(RequestId reqId, Message msg) {
-	ObjectManager->sendMessageToObject(reqId, msg, fOwnerId);
+void Component::sendLocalMessage(RequestId reqId, Message const & msg) {
+	fObjectManager->sendMessageToObject(reqId, msg, fOwnerId);
 }
-void Component::sendMessageToObject(ObjectId id, string msg, void *payload) {
-	ObjectManager->sendMessageToObject(msg, this, id, payload);
+void Component::sendMessageToObject(ObjectId id, string msg, boost::any payload) {
+	fObjectManager->sendMessageToObject(msg, this, id, payload);
 }
-void Component::sendMessageToObject(ObjectId id, RequestId reqId, void *payload) {
-	ObjectManager->sendMessageToObject(reqId, this, id, payload);
+void Component::sendMessageToObject(ObjectId id, RequestId reqId, boost::any payload) {
+	fObjectManager->sendMessageToObject(reqId, this, id, payload);
 }
-void Component::sendMessageToObject(ObjectId id, RequestId reqId, Message msg) {
-	ObjectManager->sendMessageToObject(reqId, msg, id);
+void Component::sendMessageToObject(ObjectId id, RequestId reqId, Message const & msg) {
+	fObjectManager->sendMessageToObject(reqId, msg, id);
 }
 
 
@@ -200,16 +228,16 @@ void Component::addedToObject() {
 
 // register a unique name
 bool Component::registerName(string s) {
-	return ObjectManager->registerName(fOwnerId, s);
+	return fObjectManager->registerName(fOwnerId, s);
 }
 ObjectId Component::getObjectId(string name) {
-	return ObjectManager->getObjectId(name);
+	return fObjectManager->getObjectId(name);
 }
 
 
 // destroy this component
 void Component::destroy() {
-	ObjectManager->destroyComponent(this);
+	fObjectManager->destroyComponent(this);
 }
 
 
@@ -233,7 +261,7 @@ string Component::toString() {
 
 
 // process ping
-void Component::processPing(Message msg) {
+void Component::processPing(Message const & msg) {
 	cout << *this << " PING" << endl;
 }
 
@@ -242,10 +270,10 @@ void Component::processPing(Message msg) {
 void Component::trackComponentRequest(string name, bool local) {
 
 	// get request id
-	RequestId reqId = ObjectManager->getRequestId(REQ_COMPONENT, name);
+	RequestId reqId = fObjectManager->getMessageRequestId(REQ_COMPONENT, name);
 
 	// start tracking
-	ObjectManager->trackRequest(reqId, local, this);
+	fObjectManager->trackRequest(reqId, local, this);
 }
 
 
@@ -253,8 +281,8 @@ void Component::trackComponentRequest(string name, bool local) {
 void Component::trackMessageRequest(string message) {
 
 	// get request id
-	RequestId reqId = ObjectManager->getRequestId(REQ_MESSAGE, message);
-cout << "Tracking message request " << message << endl;
+	RequestId reqId = fObjectManager->getMessageRequestId(REQ_MESSAGE, message);
+
 	// start tracking
-	ObjectManager->trackRequest(reqId, false, this);
+	fObjectManager->trackRequest(reqId, false, this);
 }

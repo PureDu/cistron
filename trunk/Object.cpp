@@ -6,11 +6,6 @@
 using namespace Cistron;
 
 
-#include <iostream>
-using namespace std;
-
-
-
 
 // constructor/destructor
 Object::Object(ObjectId id) : fId(id), fFinalized(false) {
@@ -107,7 +102,7 @@ void Object::removeComponent(Component *comp) {
 
 
 // send a local message
-void Object::sendMessage(RequestId reqId, Message msg) {
+void Object::sendMessage(RequestId reqId, Message const & msg) {
 
 	// if there are no registered components, we just skip
 	if (fLocalRequests.size() <= reqId) return;
@@ -118,12 +113,11 @@ void Object::sendMessage(RequestId reqId, Message msg) {
 		if (it->trackMe) {
 			string name;
 			if (msg.type == MESSAGE) {
-				name = ObjectManager->getRequestById(REQ_MESSAGE, reqId);
+				name = it->component->getObjectManager()->getRequestById(REQ_MESSAGE, reqId);
 			}
 			else {
-				name = ObjectManager->getRequestById(REQ_COMPONENT, reqId);
+				name = it->component->getObjectManager()->getRequestById(REQ_COMPONENT, reqId);
 			}
-			cout << *it->component << " received message " << name << " from " << *msg.sender << endl;
 		}
 		it->callback(msg);
 	}

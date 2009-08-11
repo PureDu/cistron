@@ -7,14 +7,15 @@
 #include <map>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <boost/any.hpp>
 #include <ostream>
+
+
+namespace Cistron {
 
 using std::map;
 using std::string;
 using std::ostream;
-
-
-namespace Cistron {
 
 
 // object & component id
@@ -56,17 +57,17 @@ class Component;
 struct Message {
 	MessageType type;
 	Component *sender;
-	void *p;
+	boost::any p;
 	Message(MessageType t) : type(t) {};
 	Message(MessageType t, Component *c) : type(t), sender(c) {};
-	Message(MessageType t, Component *c, void *payload) : type(t), sender(c), p(payload) {};
+	Message(MessageType t, Component *c, boost::any payload) : type(t), sender(c), p(payload) {};
 };
 
 
 
 
 // component function
-typedef boost::function<void(Message)> MessageFunction;
+typedef boost::function<void(Message const &)> MessageFunction;
 
 
 // a component registered for an event (message or component creation/destruction)
@@ -76,6 +77,9 @@ struct RegisteredComponent {
 	bool required;
 	bool trackMe;
 };
+
+// object manager
+class ObjectManager;
 
 
 // a generic component
@@ -92,14 +96,31 @@ class Component {
 		// function called when the component is added to an object
 		virtual void addedToObject();
 
-		// add another component to this object
-		void addLocalComponent(Component*);
-
 		// register a unique name for the object
 		bool registerName(string s);
 
 		// get object id
 		ObjectId getObjectId(string name);
+
+
+		/**
+		 * OBJECT/COMPONENT MODIFICATION FUNCTIONS
+		 */
+
+		// add another component to this object
+		void addLocalComponent(Component*);
+
+		// add a component to another object
+		void addComponent(ObjectId, Component*);
+
+		// create an object
+		ObjectId createObject();
+
+		// finalize an object
+		void finalizeObject(ObjectId);
+
+		// destroy object
+		void destroyObject(ObjectId);
 
 
 		/**
@@ -127,19 +148,19 @@ class Component {
 
 		// message request function
 		template<class T>
-		void requestMessage(string message, void (T::*f)(Message));
+		void requestMessage(string message, void (T::*f)(Message const &));
 
 		// require a component in this object
 		template<class T>
-		void requireComponent(string name, void (T::*f)(Message));
+		void requireComponent(string name, void (T::*f)(Message const &));
 
 		// register a component request
 		template<class T>
-		void requestComponent(string name, void (T::*f)(Message), bool local = false);
+		void requestComponent(string name, void (T::*f)(Message const &), bool local = false);
 
 		// request all components of one type
 		template<class T>
-		void requestAllExistingComponents(string name, void (T::*f)(Message));
+		void requestAllExistingComponents(string name, void (T::*f)(Message const &));
 
 
 		/**
@@ -147,19 +168,19 @@ class Component {
 		 */
 
 		// send a message
-		void sendMessage(string msg, void *payload = 0);
-		void sendMessage(RequestId id, void *payload = 0);
-		void sendMessageToObject(ObjectId id, string msg, void *payload = 0);
-		void sendMessageToObject(ObjectId id, RequestId reqId, void *payload = 0);
-		void sendMessageToObject(ObjectId id, RequestId reqId, Message msg);
-		void sendLocalMessage(string msg, void *payload = 0);
-		void sendLocalMessage(RequestId reqId, void *payload = 0);
-		void sendLocalMessage(RequestId reqId, Message msg);
+		void sendMessage(string msg, boost::any  payload = 0);
+		void sendMessage(RequestId id, boost::any  payload = 0);
+		void sendMessageToObject(ObjectId id, string msg, boost::any payload = 0);
+		void sendMessageToObject(ObjectId id, RequestId reqId, boost::any payload = 0);
+		void sendMessageToObject(ObjectId id, RequestId reqId, Message const & msg);
+		void sendLocalMessage(string msg, boost::any payload = 0);
+		void sendLocalMessage(RequestId reqId, boost::any payload = 0);
+		void sendLocalMessage(RequestId reqId, Message const & msg);
 
 		/**
 		 * IMPLEMENTED REQUESTS & LOGGING
 		 */
-		void processPing(Message);
+		void processPing(Message const &);
 
 		void trackComponentRequest(string name, bool local = false);
 		void trackMessageRequest(string message);
@@ -167,6 +188,10 @@ class Component {
 
 
 
+		// get object manager this component belongs to
+		inline ObjectManager* getObjectManager() {
+			return fObjectManager;
+		}
 
 		// get owner
 		ObjectId getOwnerId();
@@ -198,6 +223,9 @@ class Component {
 		// object id
 		ObjectId fOwnerId;
 
+		// object manager
+		ObjectManager *fObjectManager;
+
 		// component it
 		ComponentId fId;
 
@@ -211,7 +239,7 @@ class Component {
 		bool fTrack;
 
 		// object manager is our friend
-		friend class ObjectMgr;
+		friend class ObjectManager;
 
 };
 
@@ -222,25 +250,25 @@ class Component {
 
 // message request function
 template<class T>
-void Component::requestMessage(string message, void (T::*f)(Message)) {
+void Component::requestMessage(string message, void (T::*f)(Message const &)) {
 	requestMessage(message, boost::bind(f, dynamic_cast<T*>(this), _1));
 }
 
 // require a component in this object
 template<class T>
-void Component::requireComponent(string name, void (T::*f)(Message)) {
+void Component::requireComponent(string name, void (T::*f)(Message const &)) {
 	requireComponent(name, boost::bind(f, dynamic_cast<T*>(this), _1));
 }
 
 // register a component request
 template<class T>
-void Component::requestComponent(string name, void (T::*f)(Message), bool local) {
+void Component::requestComponent(string name, void (T::*f)(Message const &), bool local) {
 	requestComponent(name, boost::bind(f, dynamic_cast<T*>(this), _1), local);
 }
 
 // request all components of one type
 template<class T>
-void Component::requestAllExistingComponents(string name, void (T::*f)(Message)) {
+void Component::requestAllExistingComponents(string name, void (T::*f)(Message const &)) {
 	requestAllExistingComponents(name, boost::bind(f, dynamic_cast<T*>(this), _1));
 }
 
@@ -249,7 +277,7 @@ void Component::requestAllExistingComponents(string name, void (T::*f)(Message))
 
 
 // output
-ostream& operator<<(ostream& s, Cistron::Component &v);
+std::ostream& operator<<(std::ostream& s, Cistron::Component &v);
 
 
 #endif
