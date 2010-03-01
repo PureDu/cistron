@@ -136,12 +136,21 @@ void ObjectManager::releaseLock(RequestId reqId) {
 		registerLocalRequest(it->first, it->second);
 	}
 
-	// if there are no more locks, destroy any pending components
+	// if there are no more locks, destroy any pending components & objects
 	if (fNLocks == 0) {
+
+		// first components
 		list<Component*> deadComponents = fDeadComponents;
 		fDeadComponents.clear();
 		for (list<Component*>::iterator it = deadComponents.begin(); it != deadComponents.end(); ++it) {
 			destroyComponent(*it);
+		}
+
+		// then entire objects
+		list<ObjectId> deadObjects = fDeadObjects;
+		fDeadObjects.clear();
+		for (list<ObjectId>::iterator it = deadObjects.begin(); it != deadObjects.end(); ++it) {
+			destroyObject(*it);
 		}
 	}
 }
@@ -353,6 +362,12 @@ void ObjectManager::error(boost::format err) {
 // destroy object
 void ObjectManager::destroyObject(ObjectId id) {
 
+	// if there's no lock, we delete the object immediately, otherwise, postpone
+	if (fNLocks != 0) {
+		fDeadObjects.push_back(id);
+		return;
+	}
+
 	// object doesn't exist
 	if (id < 0 || id >= fObjects.size() || fObjects[id] == 0) {
 		error(format("Failed to destroy object %d: it does not exist!") % id);
@@ -367,7 +382,6 @@ void ObjectManager::destroyObject(ObjectId id) {
 	// delete the actual object
 	//cout << "Destroyed object " << id << endl;
 	delete fObjects[id];
-	//fDeadObjects.push_back(fObjects[id]);
 	fObjects[id] = 0;
 }
 
@@ -416,7 +430,7 @@ void ObjectManager::destroyComponent(Component *comp) {
 		}
 	}
 
-	// remove its own local requests
+	// remove its own local requests - only if the object itself wasn't removed yet
 	fObjects[comp->getOwnerId()]->removeComponent(comp);
 
 	// CREATE event

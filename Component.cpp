@@ -187,6 +187,11 @@ RequestId Component::getMessageRequestId(string name) {
 }
 
 
+// request all components of a given type in a given object
+list<Component*> Component::getComponents(ObjectId id, string name) {
+	return fObjectManager->getComponents(id, name);
+}
+
 
 /**
  * MESSAGING FUNCTIONS

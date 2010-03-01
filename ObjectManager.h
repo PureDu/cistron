@@ -63,6 +63,11 @@ class ObjectManager {
 		// register a local request
 		void registerLocalRequest(ComponentRequest, RegisteredComponent reg);
 
+		// get all components of a given type in a given object
+		list<Component*> getComponents(ObjectId objId, string componentName) {
+			return fObjects[objId]->getComponents(componentName);
+		}
+
 
 		/**
 		 * SENDING MESSAGES
@@ -154,6 +159,7 @@ class ObjectManager {
 		vector<RequestLock> fRequestLocks;
 
 		// list of pending destroyals
+		list<ObjectId> fDeadObjects;
 		list<Component*> fDeadComponents;
 
 		/**

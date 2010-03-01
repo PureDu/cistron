@@ -5,6 +5,7 @@
 
 #include <string>
 #include <map>
+#include <list>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/any.hpp>
@@ -13,6 +14,7 @@
 
 namespace Cistron {
 
+using std::list;
 using std::map;
 using std::string;
 using std::ostream;
@@ -141,6 +143,9 @@ class Component {
 
 		// request a request id of a message
 		RequestId getMessageRequestId(string name);
+
+		// request all components of a given type in a given object
+		list<Component*> getComponents(ObjectId id, string name);
 
 		/**
 		 * FANCY TEMPLATED REQUEST FUNCTIONS
