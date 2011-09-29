@@ -69,6 +69,10 @@ Add a component to an object. Calls the `addedToObject()` function of the compon
 
 Adds a new component to the object manager, in the same object as the current component. Short for `addComponent(getOwnerId(), c)`.
 
+=== `list<Component*> getComponents(string name, ObjectId id = -1)` ===
+
+get all components of a given type, either from the local object (if the second argument is ommited) or from another object identified by the object id.
+
 
 === `void finalizeObject(ObjectId)` ===
 
