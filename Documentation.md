@@ -1,0 +1,3 @@
+Welcome to the Cistron documentation. Use the navigation bar on the left side to navigate through the documentation. If you plan on using Cistron in one of your projects, or if you have questions concerning the project, please contact [the author](mailto:Karel.Crombecq@telenet.be).
+
+This is a work in progress. If you have any suggestions on how to improve this documentation, please do not hesitate to contact us.
